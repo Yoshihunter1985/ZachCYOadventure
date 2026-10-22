@@ -177,7 +177,7 @@ They chased Zach round and round the yard, flapping and pecking at his pants. "H
     },
 
     "c1-12": {
-      img: "training", speaker: "arin",
+      img: "ticklings", speaker: "arin",
       text: `Just then, every clock went *silent*. Tick... tick... nothing.
 
 Up the steps marched a line of little tin robots. They had googly eyes, toothy grins and big wind-up keys on their backs.
@@ -193,7 +193,7 @@ Zach had to think fast.`,
     },
 
     "c1-13hide": {
-      img: "training", gear: "g2", flag: "keytrick",
+      img: "ticklings", gear: "g2", flag: "keytrick",
       text: `Zach hid behind a barrel and watched carefully.
 
 One Tickling bumped into a post. Its key popped out of its back, and it stopped dead, like a toy with no *batteries*!
@@ -215,7 +215,7 @@ Arin leapt in, spinning like a tornado. Ticklings went flying everywhere. *Clang
     },
 
     "c1-13charge": {
-      img: "training",
+      img: "ticklings",
       fail: { hint: "A quiet ninja watches first, then acts.", badge: "tickled" },
       text: `Zach ran straight at the Ticklings. "Hi-YAH!"
 

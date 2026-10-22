@@ -36,6 +36,18 @@ function gearSVG(cls = "") {
   return `<svg class="${cls}" viewBox="0 0 100 100" fill="currentColor"><polygon points="${pts.join(" ")}"/><circle cx="50" cy="50" r="15" fill="rgba(0,0,0,.28)"/><circle cx="50" cy="50" r="9" fill="var(--paper, #fbf1df)"/></svg>`;
 }
 ICON.gear = gearSVG();
+function clockSVG(time, cls = "") {
+  // a friendly clock face: big numbers, short fat hour hand, long thin minute hand
+  const [h, m] = time.split(":").map(Number);
+  const hourA = ((h % 12) + m / 60) * 30, minA = m * 6;
+  const nums = Array.from({ length: 12 }, (_, i) => { const n = i + 1, a = n * Math.PI / 6;
+    return `<text x="${(100 + 70 * Math.sin(a)).toFixed(1)}" y="${(100 - 70 * Math.cos(a) + 9).toFixed(1)}" text-anchor="middle" font-size="26" font-weight="700" fill="#2b2622" font-family="Quicksand, system-ui, sans-serif">${n}</text>`; }).join("");
+  return `<svg class="${cls}" viewBox="0 0 200 200" role="img" aria-label="A clock showing ${h} o'clock">
+    <circle cx="100" cy="100" r="94" fill="#fbf1df" stroke="#b47d13" stroke-width="9"/>${nums}
+    <rect x="94" y="52" width="12" height="54" rx="6" fill="#2b2622" transform="rotate(${hourA} 100 100)"/>
+    <rect x="97" y="26" width="6" height="80" rx="3" fill="#c4472f" transform="rotate(${minA} 100 100)"/>
+    <circle cx="100" cy="100" r="9" fill="#e3a72f"/></svg>`;
+}
 ICON.rewindBadge = ICON.rewind;
 
 function tornSVG() {
@@ -260,6 +272,7 @@ async function goTo(id, opts = {}) {
 
   state.page = id; state.started = true;
   if (!opts.keepFlip) state.flip = !state.flip;
+  (page.clearFlags || []).forEach(f => delete state.flags[f]);
   if (page.flag) state.flags[page.flag] = true;
   let anchorSet = false;
   if (page.anchor && state.anchor !== id) { state.anchor = id; anchorSet = true; }
@@ -271,30 +284,40 @@ async function goTo(id, opts = {}) {
   $("chapLabel").textContent = `Chapter ${chapter.n} · ${chapter.title}`;
   $("gearBtn").innerHTML = `${ICON.gear}<span>${state.gears.length}</span>`;
   setPicture(page.img, page.speaker);
+  if (page.clock) {
+    const cc = document.createElement("div"); cc.className = "clock-card";
+    cc.innerHTML = clockSVG(page.clock) + `<span>The sign says: little hand on the ${esc(page.clockSign || "")}</span>`;
+    $("pic").appendChild(cc);
+  }
 
   const words = $("words");
   words.innerHTML = (page.fail ? `<div class="oops">Uh oh!</div>` : "") + renderText(page.text);
   words.scrollTop = 0;
 
   const ch = $("choices"); ch.innerHTML = "";
-  const addBtn = (label, cls, fn) => {
+  ch.classList.toggle("clocks", !!(page.choices && page.choices.some(c => c.clock)));
+  ch.classList.toggle("many", !!(page.choices && page.choices.filter(c => !c.needFlag || state.flags[c.needFlag]).length > 3));
+  const addBtn = (label, cls, fn, clock) => {
     const b = document.createElement("button");
     b.className = "choice " + cls;
     b.innerHTML = `<span>${esc(label)}</span>${cls === "rewind" ? "" : `<span class="arrow">${ICON.arrow}</span>`}`;
     if (cls === "rewind") b.innerHTML = `${ICON.rewind.replace("<svg", '<svg width="30" height="30"')}<span>${esc(label)}</span>`;
+    if (clock) { b.classList.add("clock-choice"); b.innerHTML = clockSVG(clock, "pick-clock"); b.setAttribute("aria-label", `${clock.split(":")[0]} o'clock`); }
     b.addEventListener("click", () => { if (!busy) fn(); });
     ch.appendChild(b);
   };
 
   if (page.fail) {
     addBtn("Rewind time!", "rewind", () => doRewind(page));
+  } else if (page.finale) {
+    addBtn(page.finale === 3 ? "See your ending!" : "The end... or is it?", "go", () => leave(page, () => finish(page.finale)));
   } else if (page.end) {
     addBtn("Finish the chapter!", "go", () => leave(page, () => chapterEnd(page.end)));
   } else if (page.choices) {
     page.choices
       .filter(c => !c.needFlag || state.flags[c.needFlag])
       .filter(c => !c.hideIfFlag || !state.flags[c.hideIfFlag])
-      .forEach(c => addBtn(c.text, "", () => leave(page, () => goTo(c.to))));
+      .forEach(c => addBtn(c.text, "", () => leave(page, () => goTo(c.to)), c.clock));
   } else if (page.next) {
     addBtn(page.next.text, "go", () => leave(page, () => goTo(page.next.to)));
   }
@@ -310,7 +333,7 @@ async function leave(page, then) {
   busy = true;
   try {
     if (page.gear) await giveGear(page.gear);
-    if (page.badge) await giveBadge(page.badge);
+    if (page.badge && !(page.badgeUnless && state.flags[page.badgeUnless])) await giveBadge(page.badge);
   } finally { busy = false; }
   then();
 }
@@ -355,6 +378,39 @@ async function chapterEnd(n) {
   show("chapterEnd");
   speak(`Chapter ${n} complete! ${msg}`);
 }
+/* ---------------- the ending ---------------- */
+async function finish(stars) {
+  // A great ending with every gear found unlocks the bonus scene first.
+  if (stars === 2 && state.gears.length >= S.totalGears && S.bonusPage) { await goTo(S.bonusPage); return; }
+  const last = S.chapters[5];
+  if (last && last.gears.every(g => state.gears.includes(g))) await giveBadge("ch5-gears");
+  await giveBadge("time-master");
+  if (stars === 3) await giveBadge("awesome");
+  state.best = Math.max(state.best || 0, stars);
+  state.page = null; state.anchor = null; state.lastDone = 5; save();
+  const left = S.totalGears - state.gears.length;
+  const msg = {
+    1: "Ninjago is saved! But Tock got away... Can you catch him next time? Hint: remember the key in his back!",
+    2: `You caught Tock! For the AWESOME ending, find all ${S.totalGears} Golden Gears. ${left === 1 ? "Just one more to go!" : left + " are still hiding."}`,
+    3: "AWESOME! Every gear found, Tock caught, and Ninjago saved. You are a true Time Ninja!"
+  }[stars];
+  const title = { 1: "Good ending!", 2: "Great ending!", 3: "AWESOME ending!" }[stars];
+  $("chapterEnd").innerHTML = `<div class="shelf-inner ending" style="align-items:center;text-align:center;padding-top:3vh">
+    <div class="stars">${[1, 2, 3].map(i => `<span class="${i <= stars ? "on" : ""}" style="animation-delay:${i * .25}s">${ICON.star}</span>`).join("")}</div>
+    <h2>${title}</h2>
+    <p class="msg">${esc(msg)}</p>
+    <div class="title-buttons">
+      <button class="big-btn" data-new>${ICON.rewind} Play the whole story again</button>
+      <button class="big-btn purple" data-ch5>Try Chapter 5 again</button>
+      <button class="big-btn gold" data-shelf>${ICON.trophy} Trophy Shelf</button>
+    </div></div>`;
+  const ce = $("chapterEnd");
+  ce.querySelector("[data-new]").onclick = newGame;
+  ce.querySelector("[data-ch5]").onclick = () => startChapter(5);
+  ce.querySelector("[data-shelf]").onclick = () => openShelf("chapterEnd");
+  show("chapterEnd");
+  speak(`${title} ${msg}`);
+}
 function startChapter(n) {
   const c = S.chapters[n]; if (!c) return;
   state.anchor = c.start; save();
@@ -377,7 +433,7 @@ function openShelf(back) {
     <div class="shelf-head"><h2>Trophy Shelf</h2><button class="big-btn gold" data-back>Back ${ICON.arrow}</button></div>
     <div class="plank"><h3>Golden Gears · ${state.gears.length} of ${S.totalGears}</h3><div class="gear-rows">${rows}</div></div>
     <div class="plank"><h3>Badges · ${state.badges.length} of ${S.badges.length}</h3><div class="badge-grid">${badges}</div></div>
-    <p style="opacity:.6;margin:0">Times rewound: ${state.rewinds}</p>
+    <p style="opacity:.75;margin:0;font-size:18px">Best ending: ${state.best ? "★".repeat(state.best) + "☆".repeat(3 - state.best) : "not finished yet"} · Times rewound: ${state.rewinds}</p>
   </div>`;
   $("shelf").querySelector("[data-back]").onclick = () => back === "book" && state.page ? goTo(state.page, { quiet: true, keepFlip: true }) : (back === "chapterEnd" ? show("chapterEnd") : titleScreen());
   show("shelf");
@@ -420,6 +476,9 @@ function titleScreen() {
   }
   tb.after(set);
   document.querySelectorAll("#title .settings").forEach(el => { if (el !== set) el.remove(); });
+  let ts = $("titleStars");
+  if (!ts) { ts = document.createElement("div"); ts.id = "titleStars"; document.querySelector("#title h1").after(ts); }
+  ts.innerHTML = state.best ? `<span class="best">Best ending: ${[1, 2, 3].map(i => `<i class="${i <= state.best ? "on" : ""}">${ICON.star}</i>`).join("")}</span>` : "";
   const bg = document.querySelector("#title .bg");
   const im = new Image(); im.onload = () => bg.style.backgroundImage = `url(${S.images.training.file})`; im.src = S.images.training.file;
   show("title");

@@ -25,5 +25,20 @@ In `story/chapterN.js`, put `*stars*` around a word to make it bold and tappable
 - `python tools/make_images.py` makes pictures with Gemini.
 - `python tools/make_narration.py` records lively narration for every page with Gemini. It only re-records pages whose text has changed.
 
-## Still needed
-Scene pictures for later chapters: `scene-tower.jpg`, `scene-factory.jpg`, `scene-office.jpg`, `scene-frozen.jpg` and `scene-sky.jpg`. A portrait of Zach (`portrait-zach.jpg`) would be nice too.
+## The story
+Five chapters, 96 pages. The quickest read is about 57 pages; exploring every path takes much longer.
+
+| # | Chapter | With | Gears |
+|---|---|---|---|
+| 1 | The New Recruit | Arin, Sora, Sensei Wu | tree, hiding from Ticklings, Wu's tea room |
+| 2 | The Frozen Market | Sora, Wyldfyre, Riyu, Sprocket | fly low, pot helmet, top of the bell |
+| 3 | Clock Mountain | Cole, Zane | dark cave, pulling keys, bird's nest |
+| 4 | The Ticking Tower | Kai, Nya | Sprocket's door, robot dance, Tock's diary |
+| 5 | The Last Second | Lloyd and everyone | Riyu's saddle, under the zeppelin, Sprocket |
+
+**Endings:** ★ Tock escapes (rewind the Freeze Machine) · ★★ Tock caught (key trick from Ch 1, spare key from Ch 4, or Sprocket from Ch 2) · ★★★ caught with all 15 gears, which unlocks a bonus scene.
+
+## Optional extras
+- A portrait of Zach as a ninja (`images/portrait-zach.jpg`).
+- Recorded narration (`tools/make_narration.py`).
+- Background music: drop mp3s in an `audio/music/` folder and ask Claude to wire them up.

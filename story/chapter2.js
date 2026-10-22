@@ -131,7 +131,7 @@ They wrapped him up in party *streamers* until only his nose stuck out.
     },
 
     "c2-07": {
-      img: "market", speaker: "sprocket",
+      img: "sprocket", speaker: "sprocket",
       text: `Behind the noodle stall, Zach found one more Tickling. It was tiny and dented, with a crooked key. It was not moving at all.
 
 "Grr. Out of wind AGAIN," it grumbled. "Tock never winds me up. He's so *bossy*!"
@@ -144,7 +144,7 @@ It saw Zach and jumped. "Don't tell! I'm Sprocket."`,
     },
 
     "c2-08wind": {
-      img: "market", speaker: "sprocket", flag: "sprocket", badge: "new-friend",
+      img: "sprocket", speaker: "sprocket", flag: "sprocket", badge: "new-friend",
       text: `Zach turned Sprocket's key. Once. Twice. Three times.
 
 Sprocket's eyes lit up. He did a happy little spin. "Whee! Thanks, kid!"
