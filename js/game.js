@@ -459,6 +459,7 @@ function titleScreen() {
     tb.querySelector("[data-no]").onclick = titleScreen;
   });
   mk(`${ICON.trophy} Trophy Shelf`, "gold", () => openShelf("title"));
+  mk(`${ICON.star} Play Star Knight`, "purple", () => { stopSpeaking(); location.href = "nexogame.html"; });
   // reading settings
   const set = document.createElement("div"); set.className = "settings";
   const auto = document.createElement("button"); auto.className = "pill" + (state.autoRead ? " on" : "");
